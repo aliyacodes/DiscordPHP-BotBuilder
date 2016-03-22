@@ -1,0 +1,20 @@
+{
+    "name": "david-cole/discord-php-bot-builder",
+    "description": "A library that helps with creating a bot with helpers for commands.",
+    "require": {
+        "team-reflex/discord-php": "dev-bot-api"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "David Cole",
+            "email": "david@team-reflex.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Discord\\Bot\\": "src/Bot"
+        }
+    },
+    "minimum-stability": "dev"
+}
