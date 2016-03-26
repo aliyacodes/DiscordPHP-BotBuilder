@@ -65,7 +65,7 @@ class Bot extends EventEmitter
 			$this->ws->on(Event::MESSAGE_CREATE, function ($message, $discord, $new) {
 				$params = explode(' ', $message->content);
 				$command = @$params[0];
-				Arr::pull($params, 0);
+				array_shift($params); // Remove the prefix
 
 				foreach ($this->commands as $trigger => $listener) {
 					$expected = $this->config['prefix'].$trigger;
