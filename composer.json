@@ -2,7 +2,8 @@
     "name": "david-cole/discord-php-bot-builder",
     "description": "A library that helps with creating a bot with helpers for commands.",
     "require": {
-        "team-reflex/discord-php": "dev-bot-api"
+        "team-reflex/discord-php": "dev-bot-api",
+        "monolog/monolog": "^1.18"
     },
     "license": "MIT",
     "authors": [

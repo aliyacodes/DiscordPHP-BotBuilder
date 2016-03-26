@@ -23,15 +23,11 @@ $bot = new Bot($argv[1], [
     'prefix' => ';',
 ]);
 
-$bot->on('ready', function ($config, $discord) {
-    echo "Bot is running:\r\n";
-    echo "User: {$discord->username}#{$discord->discriminator}\r\n";
-    echo "Prefix: {$config['prefix']}\r\n";
-    echo "----------------------------------------------------\r\n";
-});
-
-$bot->on('command-triggered', function ($command, $user) {
-    echo "Command triggered: {$command} by {$user->username}\r\n";
+$bot->on('ready', function ($config, $discord, $bot) {
+    $bot->getLogger()->addInfo('Bot is running.', [
+        'user' => "{$discord->username}#{$discord->discriminator}",
+        'prefix' => $config['prefix'],
+    ]);
 });
 
 $bot->addCommand('dank', function ($params, $message) {

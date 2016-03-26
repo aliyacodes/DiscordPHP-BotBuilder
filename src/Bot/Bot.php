@@ -15,6 +15,7 @@ use Discord\Discord;
 use Discord\WebSockets\Event;
 use Discord\WebSockets\WebSocket;
 use Evenement\EventEmitter;
+use Monolog\Logger;
 use React\EventLoop\Factory;
 
 /**
@@ -44,6 +45,13 @@ class Bot extends EventEmitter
     protected $loop;
 
     /**
+     * The Monolog logger.
+     *
+     * @var Logger Monolog logger.
+     */
+    protected $log;
+
+    /**
      * The config array.
      *
      * @var array The config array.
@@ -56,19 +64,23 @@ class Bot extends EventEmitter
      * @param string             $token  The bot authentication token.
      * @param array              $config A config array.
      * @param LoopInterface|null $loop   The ReactPHP event loop.
+     * @param Logger             $log    The Monolog logger.
      *
      * @return void
      */
-    public function __construct($token, array $config = [], $loop = null)
+    public function __construct($token, array $config = [], $loop = null, $log = null)
     {
         $this->setupConfig($config);
+        $this->log = $log ?: new Logger($this->config['name']);
 
         $this->loop = is_null($loop) ? Factory::create() : $loop;
         $this->discord = new Discord($token);
         $this->ws = new WebSocket($this->discord, $this->loop, $this->config['use_etf']);
+        $this->log->addInfo('Running with config:', $this->config);
 
         $this->ws->on('ready', function ($discord) {
-            $this->emit('ready', [$this->config, $discord, $this->ws]);
+            $this->log->addInfo('Bot WebSocket is ready.');
+            $this->emit('ready', [$this->config, $discord, $this]);
 
             $this->ws->on(Event::MESSAGE_CREATE, function ($message, $discord, $new) {
                 $params = explode(' ', $message->content);
@@ -79,11 +91,24 @@ class Bot extends EventEmitter
                     $expected = $this->config['prefix'].$trigger;
 
                     if ($command == $expected) {
+                        $this->log->addInfo("User {$message->author->username}#{$message->author->discriminator} ({$message->author}) ran command '{$expected}'", $params);
+
                         $this->emit('command-triggered', [$expected, $message->author]);
                         call_user_func_array($listener, [$params, $message, $new, $this]);
                     }
                 }
             });
+        });
+
+        $this->ws->on('reconnecting', function () { $this->log->addWarning('Discord WebSocket is reconnecting...'); });
+        $this->ws->on('reconnected', function () { $this->log->addWarning('Discord WebSocket has reconnected.'); });
+
+        $this->ws->on('close', function ($op, $reason) {
+            $this->log->addWarning('Discord WebSocket closed.', ['op' => $op, 'reason' => $reason]);
+        });
+
+        $this->ws->on('error', function ($e) {
+            $this->log->addError('Discord WebSocket encountered an error.', [$e]);
         });
     }
 
@@ -124,6 +149,7 @@ class Bot extends EventEmitter
         $defaults = [
             'prefix' => '!',
             'use_etf' => true,
+            'name' => 'DiscordPHP Bot',
         ];
 
         $this->config = array_merge($defaults, $config);
@@ -137,5 +163,15 @@ class Bot extends EventEmitter
     public function start()
     {
         $this->loop->run();
+    }
+
+    /**
+     * Returns the Monolog logger.
+     *
+     * @return Logger The Monolog logger.
+     */
+    public function getLogger()
+    {
+        return $this->log;
     }
 }
